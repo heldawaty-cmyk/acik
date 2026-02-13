@@ -67,6 +67,8 @@ export interface Trip {
   driverLocationAuthorized: boolean;
   lastUpdated: string;
   coordinationSignal?: 'PARENT_LATE' | 'DRIVER_WAITING' | 'CHILD_NOT_FOUND' | 'TEACHER_RECEIVED' | 'CHANGE_PICKUP' | 'TRAFFIC_DELAY';
+  rejectionReason?: string;
+  verificationPin?: string; // 4-digit code for secure boarding
 }
 
 export interface Driver {

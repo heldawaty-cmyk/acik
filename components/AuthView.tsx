@@ -1,16 +1,17 @@
 
 import React, { useState } from 'react';
 import { UserRole, User } from '../types';
-import { Shield, ArrowLeft, Mail, Lock, Phone, User as UserIcon } from 'lucide-react';
+import { Shield, ArrowLeft, Mail, Lock, Phone, User as UserIcon, Zap } from 'lucide-react';
 
 interface AuthViewProps {
   role: UserRole;
   isSignUp: boolean;
   onBack: () => void;
   onSuccess: (user: User) => void;
+  onQuickLogin?: () => void;
 }
 
-const AuthView: React.FC<AuthViewProps> = ({ role, isSignUp, onBack, onSuccess }) => {
+const AuthView: React.FC<AuthViewProps> = ({ role, isSignUp, onBack, onSuccess, onQuickLogin }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -65,70 +66,86 @@ const AuthView: React.FC<AuthViewProps> = ({ role, isSignUp, onBack, onSuccess }
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-10 space-y-6">
-          {isSignUp && (
+        <div className="p-10 space-y-8">
+          {onQuickLogin && (
+            <button 
+              onClick={onQuickLogin}
+              className="w-full bg-indigo-50 text-indigo-700 py-4 rounded-2xl font-black text-sm uppercase tracking-widest border-2 border-indigo-100 flex items-center justify-center gap-2 hover:bg-indigo-100 transition-all"
+            >
+              <Zap size={18} className="fill-indigo-700" /> Use Demo Account
+            </button>
+          )}
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
+            <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest"><span className="bg-white px-4 text-slate-300">Or Manual Entry</span></div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {isSignUp && (
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                <div className="relative">
+                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                  <input 
+                    required
+                    type="text" 
+                    value={formData.name}
+                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    placeholder="Full Name" 
+                    className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl font-bold outline-none focus:border-indigo-600 transition-all" 
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
               <div className="relative">
-                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
                 <input 
                   required
-                  type="text" 
-                  value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value})}
-                  placeholder="Full Name" 
+                  type="email" 
+                  value={formData.email}
+                  onChange={e => setFormData({...formData, email: e.target.value})}
+                  placeholder="email@example.com" 
                   className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl font-bold outline-none focus:border-indigo-600 transition-all" 
                 />
               </div>
             </div>
-          )}
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-              <input 
-                required
-                type="email" 
-                value={formData.email}
-                onChange={e => setFormData({...formData, email: e.target.value})}
-                placeholder="email@example.com" 
-                className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl font-bold outline-none focus:border-indigo-600 transition-all" 
-              />
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                <input 
+                  required
+                  type="password" 
+                  value={formData.password}
+                  onChange={e => setFormData({...formData, password: e.target.value})}
+                  placeholder="••••••••" 
+                  className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl font-bold outline-none focus:border-indigo-600 transition-all" 
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-              <input 
-                required
-                type="password" 
-                value={formData.password}
-                onChange={e => setFormData({...formData, password: e.target.value})}
-                placeholder="••••••••" 
-                className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl font-bold outline-none focus:border-indigo-600 transition-all" 
-              />
-            </div>
-          </div>
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg shadow-xl hover:bg-indigo-600 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+            >
+              {loading ? (
+                <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                isSignUp ? 'Create Account' : 'Sign In'
+              )}
+            </button>
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg shadow-xl hover:bg-indigo-600 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
-          >
-            {loading ? (
-              <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              isSignUp ? 'Create Account' : 'Sign In'
-            )}
-          </button>
-
-          <p className="text-center text-xs font-bold text-slate-400 mt-4">
-            By continuing, you agree to our <span className="text-slate-900 underline">Terms of Service</span>.
-          </p>
-        </form>
+            <p className="text-center text-xs font-bold text-slate-400 mt-4">
+              By continuing, you agree to our <span className="text-slate-900 underline">Terms of Service</span>.
+            </p>
+          </form>
+        </div>
       </div>
     </div>
   );

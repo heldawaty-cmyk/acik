@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { UserRole } from '../types';
-import { Shield, User, Truck, GraduationCap, ShieldAlert, ChevronRight, Star, MapPin, CheckCircle, Calendar, UserPlus, Navigation, Bell, Search } from 'lucide-react';
+import { Shield, User, Truck, GraduationCap, ShieldAlert, ChevronRight, Star, MapPin, CheckCircle, Calendar, UserPlus, Navigation, Bell, Search, Zap } from 'lucide-react';
 
 interface LandingPageProps {
   onSelectRole: (role: UserRole) => void;
@@ -25,9 +25,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectRole, onSignUp }) => 
             <a href="#roles" className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors">Join Network</a>
             <button 
               onClick={() => onSelectRole(UserRole.PARENT)}
-              className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
+              className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 flex items-center gap-2"
             >
-              Sign In
+              <Zap size={14} className="fill-white" /> Quick Sign In
             </button>
           </div>
         </div>
@@ -52,19 +52,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectRole, onSignUp }) => 
               onClick={() => onSignUp(UserRole.PARENT)}
               className="w-full sm:w-auto bg-indigo-600 text-white px-10 py-5 rounded-[2rem] font-black text-lg hover:bg-indigo-700 transition-all shadow-2xl shadow-indigo-200 flex items-center justify-center gap-3"
             >
-              Join as Parent <ChevronRight size={20} />
+              Get Started <ChevronRight size={20} />
             </button>
             <button 
-              onClick={() => onSignUp(UserRole.DRIVER)}
+              onClick={() => onSelectRole(UserRole.PARENT)}
               className="w-full sm:w-auto bg-white text-slate-900 border border-slate-200 px-10 py-5 rounded-[2rem] font-black text-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-3"
             >
-              Drive with Acik
+              <Zap size={20} className="text-indigo-600 fill-indigo-600" /> One-Tap Demo
             </button>
           </div>
         </div>
       </section>
 
-      {/* Stats/Proof (Keep) */}
+      {/* Stats/Proof */}
       <section id="features" className="py-20 bg-white border-y border-slate-100">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
           <div className="flex flex-col items-center text-center">
@@ -95,8 +95,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectRole, onSignUp }) => 
       <section id="roles" className="py-32 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-4xl font-black text-slate-900 tracking-tight mb-4">Select Your Portal</h2>
-            <p className="text-slate-500 font-medium">Join the Acik network based on your role.</p>
+            <h2 className="text-4xl font-black text-slate-900 tracking-tight mb-4">Enter the Network</h2>
+            <p className="text-slate-500 font-medium">Select a portal to explore the platform immediately.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -141,15 +141,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSelectRole, onSignUp }) => 
               <button 
                 key={idx}
                 onClick={() => onSelectRole(card.role)}
-                className="group relative bg-white p-10 rounded-[3rem] border border-slate-200 text-left hover:border-indigo-600 transition-all hover:shadow-2xl hover:shadow-indigo-100 hover:-translate-y-2 flex flex-col h-full"
+                className="group relative bg-white p-10 rounded-[3rem] border border-slate-200 text-left hover:border-indigo-600 transition-all hover:shadow-2xl hover:shadow-indigo-100 hover:-translate-y-2 flex flex-col h-full overflow-hidden"
               >
+                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <Zap size={20} className="text-indigo-400 fill-indigo-400" />
+                </div>
                 <div className={`${card.lightColor} ${card.textColor} p-5 rounded-[2rem] w-fit mb-8 group-hover:scale-110 transition-transform`}>
                   <card.icon size={32} />
                 </div>
                 <h3 className="text-2xl font-black text-slate-900 mb-4">{card.title}</h3>
                 <p className="text-slate-500 font-medium text-sm leading-relaxed mb-8 flex-1">{card.desc}</p>
                 <div className="flex items-center gap-2 font-black text-xs uppercase tracking-widest text-slate-400 group-hover:text-indigo-600 transition-colors">
-                  Enter Portal <ChevronRight size={16} />
+                  Instant Access <ChevronRight size={16} />
                 </div>
               </button>
             ))}

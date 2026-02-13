@@ -2,7 +2,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Trip, Child, Driver } from "../types";
 
-// Always use the specified initialization format.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 /**
@@ -44,12 +43,40 @@ export async function analyzeTripSafety(trip: Trip, child: Child, driver: Driver
       }
     });
 
-    // Access .text property directly.
     const jsonStr = response.text?.trim() || "{}";
     return JSON.parse(jsonStr);
   } catch (error) {
     console.error("AI Safety Analysis Error:", error);
     return { isSafe: true, alertMessage: null, recommendation: "Continuous monitoring enabled." };
+  }
+}
+
+/**
+ * Generates context-aware smart replies for parents.
+ */
+export async function generateSmartReply(trip: Trip, childName: string) {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Suggest 3 very short (1-3 words) quick-action buttons for a parent during this child transport scenario.
+      Child: ${childName}
+      Trip Status: ${trip.status}
+      Current Coordination Issue: ${trip.coordinationSignal || 'None'}
+      
+      Examples: "Wait there", "Coming down", "Call driver", "All clear".
+      Return exactly 3 phrases as a JSON array of strings.`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING }
+        }
+      }
+    });
+    const jsonStr = response.text?.trim() || "[]";
+    return JSON.parse(jsonStr);
+  } catch (error) {
+    return ["Okay", "On my way", "Call driver"];
   }
 }
 
@@ -65,7 +92,6 @@ export async function generateAutoMessage(tripStatus: string, eta: string) {
       ETA: ${eta}
       Keep it under 15 words.`,
     });
-    // response.text is a property.
     return response.text || "";
   } catch (error) {
     return `Update: Your child's ride is currently ${tripStatus}. Estimated arrival: ${eta}.`;

@@ -14,8 +14,6 @@ export const SCHOOLS_LIST = [
   "SK Damansara Heights"
 ];
 
-// Simulated Admin/Current User
-// Added missing profileComplete: true
 export const MOCK_USER: User = {
   id: 'P_DAKRM8J5',
   name: 'Siti Zulkifli',
@@ -25,7 +23,6 @@ export const MOCK_USER: User = {
   profileComplete: true
 };
 
-// Added missing profileComplete: true
 export const MOCK_TEACHER: User = {
   id: 'T_HENDERSON',
   name: 'Mr. Henderson',
@@ -35,7 +32,6 @@ export const MOCK_TEACHER: User = {
   profileComplete: true
 };
 
-// Passport-style portraits for kids (neutral backgrounds, centered)
 export const MOCK_CHILDREN: Child[] = [
   {
     id: 'C_XFGCAQVK',
@@ -89,7 +85,6 @@ export const MOCK_CHILDREN: Child[] = [
   }
 ];
 
-// Drivers with valid License IDs
 export const MOCK_DRIVERS: Driver[] = [
   {
     id: 'D_NFVOBBZ2',
@@ -155,10 +150,10 @@ export const MOCK_TRIPS: Trip[] = [
     currentLng: 101.6673,
     routeDeviation: false,
     alerts: [],
-    // Fix: Added missing properties required by Trip interface
     trackingHealth: 'OPTIMAL',
     driverLocationAuthorized: true,
-    lastUpdated: new Date().toISOString()
+    lastUpdated: new Date().toISOString(),
+    verificationPin: '4821'
   },
   {
     id: 'T_FGJK2N7Z',
@@ -180,10 +175,10 @@ export const MOCK_TRIPS: Trip[] = [
         resolved: false
       }
     ],
-    // Fix: Added missing properties required by Trip interface
     trackingHealth: 'OPTIMAL',
     driverLocationAuthorized: true,
-    lastUpdated: new Date().toISOString()
+    lastUpdated: new Date().toISOString(),
+    verificationPin: '9012'
   },
   {
     id: 'T_DDH0UYHN',
@@ -196,10 +191,10 @@ export const MOCK_TRIPS: Trip[] = [
     currentLng: 101.6651,
     routeDeviation: false,
     alerts: [],
-    // Fix: Added missing properties required by Trip interface
     trackingHealth: 'OPTIMAL',
     driverLocationAuthorized: true,
-    lastUpdated: new Date().toISOString()
+    lastUpdated: new Date().toISOString(),
+    verificationPin: '5567'
   }
 ];
 

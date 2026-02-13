@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { UserRole, Trip, TripStatus, Alert, User, Child } from './types';
-import { MOCK_TRIPS, MOCK_USER, MOCK_CHILDREN } from './constants';
+import { MOCK_TRIPS, MOCK_USER, MOCK_CHILDREN, MOCK_TEACHER } from './constants';
 import Layout from './components/Layout';
 import ParentView from './components/ParentView';
 import DriverView from './components/DriverView';
@@ -128,6 +128,48 @@ const App: React.FC = () => {
     setIsSigningUp(signUp);
   };
 
+  /**
+   * One-tap login for demo purposes to bypass repetitive auth steps
+   */
+  const handleQuickLogin = (role: UserRole) => {
+    setActiveRole(role);
+    setIsSigningUp(false);
+    
+    let mockUser: User;
+    switch(role) {
+      case UserRole.PARENT:
+        mockUser = { ...MOCK_USER };
+        break;
+      case UserRole.TEACHER:
+        mockUser = { ...MOCK_TEACHER };
+        break;
+      case UserRole.DRIVER:
+        mockUser = {
+          id: 'D_QUICK_LOGIN',
+          name: 'Amir (Demo)',
+          role: UserRole.DRIVER,
+          avatar: 'https://i.pravatar.cc/150?u=D_QUICK_LOGIN',
+          phone: '012-555-8888',
+          profileComplete: true,
+          verificationStatus: 'APPROVED'
+        };
+        break;
+      case UserRole.ADMIN:
+        mockUser = {
+          id: 'A_QUICK_LOGIN',
+          name: 'Admin HQ',
+          role: UserRole.ADMIN,
+          avatar: 'https://i.pravatar.cc/150?u=A_QUICK_LOGIN',
+          phone: '999',
+          profileComplete: true
+        };
+        break;
+    }
+    
+    setUser(mockUser);
+    setCurrentView('DASHBOARD');
+  };
+
   const handleAuthSuccess = (userData: User) => {
     setUser(userData);
   };
@@ -157,12 +199,25 @@ const App: React.FC = () => {
 
   // 1. If not logged in and no role selected, show Landing
   if (!activeRole) {
-    return <LandingPage onSelectRole={(role) => handleRoleSelection(role, false)} onSignUp={(role) => handleRoleSelection(role, true)} />;
+    return (
+      <LandingPage 
+        onSelectRole={handleQuickLogin} // Changed to QuickLogin to reduce repetition
+        onSignUp={(role) => handleRoleSelection(role, true)} 
+      />
+    );
   }
 
   // 2. If role selected but no user, show Auth
   if (!user) {
-    return <AuthView role={activeRole} isSignUp={isSigningUp} onBack={() => setActiveRole(null)} onSuccess={handleAuthSuccess} />;
+    return (
+      <AuthView 
+        role={activeRole} 
+        isSignUp={isSigningUp} 
+        onBack={() => setActiveRole(null)} 
+        onSuccess={handleAuthSuccess}
+        onQuickLogin={() => handleQuickLogin(activeRole)} // Allow one-tap from auth screen too
+      />
+    );
   }
 
   // 3. If user exists but profile incomplete, show Profile Setup (Onboarding)
