@@ -6,7 +6,7 @@ import { generateSmartReply } from '../services/geminiService';
 import { 
   MapPin, Clock, Phone, MessageSquare, 
   ShieldCheck, Bell, AlertCircle, Siren, AlertTriangle, Navigation, WifiOff, CheckCircle, Smartphone, Plus, Edit3, X, Calendar, ArrowRight, Truck,
-  Search, Key, Zap
+  Search, Key, Zap, Map as MapIcon, ChevronDown
 } from 'lucide-react';
 import LiveMap from './LiveMap';
 
@@ -30,11 +30,23 @@ const ParentView: React.FC<ParentViewProps> = ({ user, trips, childrenList, setT
     childId: string;
     type: 'DAILY' | 'ADHOC';
     time: string;
+    pickup: string;
+    destination: string;
   }>({
     childId: myChildren[0]?.id || '',
     type: 'ADHOC',
-    time: '07:30'
+    time: '07:30',
+    pickup: user.homeAddress || 'My Home Address',
+    destination: ''
   });
+
+  // Effect to update destination default when child changes
+  useEffect(() => {
+    const selectedChild = myChildren.find(c => c.id === newBooking.childId);
+    if (selectedChild) {
+      setNewBooking(prev => ({ ...prev, destination: selectedChild.school }));
+    }
+  }, [newBooking.childId, myChildren]);
 
   const activeTrip = useMemo(() => trips.find(t => 
     myChildren.some(c => c.id === t.childId) &&
@@ -96,6 +108,7 @@ const ParentView: React.FC<ParentViewProps> = ({ user, trips, childrenList, setT
     setIsBookingModalOpen(false);
     setBookingStep(1);
     
+    // Automatic match after simulation
     setTimeout(() => {
       setTrips(current => current.map(t => {
         if (t.id === trip.id) {
@@ -148,20 +161,6 @@ const ParentView: React.FC<ParentViewProps> = ({ user, trips, childrenList, setT
     }
   }, [activeTrip, currentChild]);
 
-  const setCoordinationSignal = (signal: 'PARENT_LATE' | 'CHANGE_PICKUP' | null) => {
-    if (!activeTrip) return;
-    setTrips(prev => prev.map(t => t.id === activeTrip.id ? { 
-      ...t, 
-      coordinationSignal: signal === t.coordinationSignal ? undefined : signal 
-    } : t));
-    setShowCoordinationMenu(false);
-  };
-
-  const triggerSOS = () => {
-    setSosStage('IDLE');
-    alert("EMERGENCY: SOS Triggered. Dispatching nearest unit and alerting school admin.");
-  };
-
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       <header className="flex justify-between items-center">
@@ -171,7 +170,7 @@ const ParentView: React.FC<ParentViewProps> = ({ user, trips, childrenList, setT
         </div>
         <div className="flex gap-2">
           <button 
-            onClick={() => setIsBookingModalOpen(true)}
+            onClick={() => { setIsBookingModalOpen(true); setBookingStep(1); }}
             className="p-2.5 bg-indigo-600 text-white rounded-xl font-black text-xs uppercase flex items-center gap-2 shadow-lg shadow-indigo-100"
           >
             <Plus size={18} /> New Ride
@@ -183,22 +182,26 @@ const ParentView: React.FC<ParentViewProps> = ({ user, trips, childrenList, setT
           ) : (
             <div className="flex gap-2 animate-in slide-in-from-right-2">
               <button onClick={() => setSosStage('IDLE')} className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase">Cancel</button>
-              <button onClick={triggerSOS} className="px-4 py-2 bg-red-600 text-white rounded-xl font-black text-xs uppercase shadow-lg shadow-red-200">Confirm SOS</button>
+              <button onClick={() => alert('SOS NOTIFIED')} className="px-4 py-2 bg-red-600 text-white rounded-xl font-black text-xs uppercase shadow-lg shadow-red-200">Confirm SOS</button>
             </div>
           )}
         </div>
       </header>
 
+      {/* Matching Screen */}
       {pendingTrip && !activeTrip && (
-        <div className="bg-slate-900 text-white p-8 rounded-[3rem] shadow-2xl animate-in zoom-in-95 duration-500 relative overflow-hidden">
-           <div className="absolute -right-10 -top-10 opacity-10"><Truck size={200} /></div>
-           <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
-              <div className="w-20 h-20 rounded-[2rem] bg-indigo-500 flex items-center justify-center animate-pulse">
-                 <Search size={40} className="text-white" />
+        <div className="bg-slate-900 text-white p-12 rounded-[3.5rem] shadow-2xl animate-in zoom-in-95 duration-500 relative overflow-hidden text-center">
+           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-500/10 via-transparent to-transparent animate-pulse" />
+           <div className="relative z-10 space-y-8">
+              <div className="relative inline-block">
+                 <div className="absolute inset-0 bg-indigo-500 rounded-full animate-ping opacity-20" />
+                 <div className="w-24 h-24 rounded-full bg-indigo-600 flex items-center justify-center relative z-10 mx-auto">
+                    <Search size={44} className="text-white" />
+                 </div>
               </div>
               <div>
-                 <h2 className="text-3xl font-black mb-1">Matching Guardian</h2>
-                 <p className="text-slate-400 font-medium">Scanning for the nearest vetted transporter...</p>
+                 <h2 className="text-3xl font-black mb-2">Finding Your Guardian</h2>
+                 <p className="text-slate-400 font-medium">Scanning for vetted transporters in your local zone...</p>
               </div>
            </div>
         </div>
@@ -208,7 +211,7 @@ const ParentView: React.FC<ParentViewProps> = ({ user, trips, childrenList, setT
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             {statusInfo && (
-              <div className={`${statusInfo.color} text-white p-6 md:p-10 rounded-[2.5rem] shadow-2xl animate-in slide-in-from-top-4 duration-500 border-4 border-white relative overflow-hidden`}>
+              <div className={`${statusInfo.color} text-white p-6 md:p-10 rounded-[2.5rem] shadow-2xl border-4 border-white relative overflow-hidden`}>
                 <div className="absolute top-0 right-0 p-8 opacity-10"><statusInfo.icon size={120} /></div>
                 <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
                   <div className="bg-white/20 p-5 rounded-[2rem] backdrop-blur-md">
@@ -228,7 +231,6 @@ const ParentView: React.FC<ParentViewProps> = ({ user, trips, childrenList, setT
               </div>
             )}
 
-            {/* Smart Replies Bar */}
             {smartReplies.length > 0 && (
                <div className="flex gap-2 overflow-x-auto no-scrollbar py-2">
                   <div className="flex items-center gap-2 bg-indigo-50 px-4 rounded-2xl mr-2">
@@ -236,55 +238,16 @@ const ParentView: React.FC<ParentViewProps> = ({ user, trips, childrenList, setT
                      <span className="text-[10px] font-black uppercase text-indigo-600">Smart Replies</span>
                   </div>
                   {smartReplies.map((reply, i) => (
-                    <button 
-                      key={i} 
-                      className="bg-white border border-slate-200 px-6 py-3 rounded-2xl text-xs font-black text-slate-700 whitespace-nowrap shadow-sm hover:border-indigo-600 hover:text-indigo-600 transition-all active:scale-95"
-                    >
-                      {reply}
-                    </button>
+                    <button key={i} className="bg-white border border-slate-200 px-6 py-3 rounded-2xl text-xs font-black text-slate-700 whitespace-nowrap shadow-sm hover:border-indigo-600 hover:text-indigo-600 transition-all active:scale-95">{reply}</button>
                   ))}
                </div>
             )}
 
             <div className="bg-white rounded-[3rem] overflow-hidden border border-slate-200 shadow-xl relative">
               <div className="h-[450px] relative">
-                <LiveMap 
-                  lat={activeTrip.currentLat} 
-                  lng={activeTrip.currentLng} 
-                  coordinationSignal={activeTrip.coordinationSignal} 
-                />
-                
-                <div className="absolute bottom-6 left-6 right-6 flex flex-col gap-3">
-                   <div className="flex gap-3">
-                      <button 
-                        onClick={() => setShowCoordinationMenu(!showCoordinationMenu)}
-                        className="bg-white/90 backdrop-blur-md px-6 py-4 rounded-2xl border border-white shadow-lg flex items-center gap-3 font-black text-xs uppercase tracking-widest text-slate-900 active:scale-95 transition-all"
-                      >
-                         <Edit3 size={18} className="text-indigo-600" />
-                         Coordination
-                      </button>
-                   </div>
-                   
-                   {showCoordinationMenu && (
-                     <div className="bg-white/90 backdrop-blur-md p-2 rounded-[2rem] border border-white shadow-2xl animate-in slide-in-from-bottom-2 flex gap-2">
-                        <button 
-                          onClick={() => setCoordinationSignal('PARENT_LATE')}
-                          className={`flex-1 py-4 rounded-[1.5rem] font-black text-[10px] uppercase tracking-tighter flex items-center justify-center gap-2 transition-all ${activeTrip.coordinationSignal === 'PARENT_LATE' ? 'bg-amber-600 text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
-                        >
-                          <Clock size={16} /> I'm Late
-                        </button>
-                        <button 
-                          onClick={() => setCoordinationSignal('CHANGE_PICKUP')}
-                          className={`flex-1 py-4 rounded-[1.5rem] font-black text-[10px] uppercase tracking-tighter flex items-center justify-center gap-2 transition-all ${activeTrip.coordinationSignal === 'CHANGE_PICKUP' ? 'bg-indigo-600 text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
-                        >
-                          <MapPin size={16} /> New Pickup
-                        </button>
-                     </div>
-                   )}
-                </div>
+                <LiveMap lat={activeTrip.currentLat} lng={activeTrip.currentLng} coordinationSignal={activeTrip.coordinationSignal} />
               </div>
-
-              <div className="p-8 flex flex-col md:flex-row gap-8 items-center justify-between border-t border-slate-100">
+              <div className="p-8 flex items-center justify-between border-t border-slate-100">
                 <div className="flex items-center gap-6">
                   <img src={currentChild.photo} className="w-20 h-28 rounded-2xl object-cover border-4 border-slate-50 shadow-xl" />
                   <div>
@@ -295,12 +258,7 @@ const ParentView: React.FC<ParentViewProps> = ({ user, trips, childrenList, setT
                     </div>
                   </div>
                 </div>
-                
-                <div className="flex gap-2">
-                   <button className="bg-slate-900 text-white p-4 rounded-2xl shadow-xl hover:bg-slate-800 transition-all">
-                     <MessageSquare size={24} />
-                   </button>
-                </div>
+                <button className="bg-slate-900 text-white p-4 rounded-2xl shadow-xl hover:bg-slate-800 transition-all"><MessageSquare size={24} /></button>
               </div>
             </div>
           </div>
@@ -318,93 +276,49 @@ const ParentView: React.FC<ParentViewProps> = ({ user, trips, childrenList, setT
                     </div>
                   </div>
                   <button className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black flex items-center justify-center gap-3 shadow-lg">
-                    <Phone size={20} />
-                    {activeTrip.status === TripStatus.ARRIVED_AT_PICKUP ? 'Call Driver (Outside)' : 'Call Driver'}
+                    <Phone size={20} /> Call Driver
                   </button>
                 </div>
               )}
-            </div>
-
-            <div className="bg-indigo-600 p-8 rounded-[3rem] text-white shadow-xl relative overflow-hidden group">
-               <div className="absolute inset-0 bg-white/5 group-hover:bg-white/10 transition-colors pointer-events-none" />
-               <div className="flex items-center gap-3 mb-4">
-                 <ShieldCheck size={24} className="text-indigo-200" />
-                 <h4 className="font-black text-lg">Safety Vault</h4>
-               </div>
-               <p className="text-indigo-100 text-sm font-medium leading-relaxed">
-                 Every ride is monitored by our dispatch center. For assistance, use the SOS button.
-               </p>
             </div>
           </div>
         </div>
       ) : (
         !pendingTrip && (
-          <div className="bg-white p-12 rounded-[3rem] border border-slate-200 shadow-sm text-center">
-            <div className="bg-indigo-50 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 text-indigo-600">
-              {myChildren.length === 0 ? <Plus size={40} /> : <Clock size={40} />}
+          <div className="bg-white p-12 rounded-[3.5rem] border border-slate-200 shadow-sm text-center">
+            <div className="bg-indigo-50 w-24 h-24 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 text-indigo-600">
+              {myChildren.length === 0 ? <Plus size={44} /> : <MapIcon size={44} />}
             </div>
-            <h2 className="text-3xl font-black text-slate-900 mb-2">
-              {myChildren.length === 0 ? 'Welcome to Acik' : 'No Active Rides'}
-            </h2>
-            <p className="text-slate-500 font-medium mb-8">
-              {myChildren.length === 0 
-                ? 'Register your children to start using the safe mobility network.' 
-                : 'Schedule your next school transport with a verified guardian.'}
-            </p>
-            <button 
-              onClick={() => setIsBookingModalOpen(true)}
-              className="bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black text-lg shadow-xl shadow-indigo-200 hover:bg-indigo-700 transition-all"
-            >
-              {myChildren.length === 0 ? 'Add First Child' : 'Book New Ride'}
-            </button>
+            <h2 className="text-3xl font-black text-slate-900 mb-2">No Active Missions</h2>
+            <p className="text-slate-500 font-medium mb-10 max-w-sm mx-auto">Your children are currently offline. Schedule a ride to activate live tracking.</p>
+            <button onClick={() => { setIsBookingModalOpen(true); setBookingStep(1); }} className="bg-indigo-600 text-white px-12 py-5 rounded-3xl font-black text-lg shadow-2xl shadow-indigo-100 hover:bg-indigo-700 transition-all">Book New Ride</button>
           </div>
         )
       )}
-      
-      <section className="mt-12">
-        <h2 className="text-2xl font-black text-slate-900 mb-8 tracking-tight">Your Registered Passengers</h2>
-        {myChildren.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
-            {myChildren.map(c => (
-              <div key={c.id} className="bg-white p-4 rounded-3xl border border-slate-100 text-center flex flex-col items-center group hover:border-indigo-600 transition-colors">
-                  <img src={c.photo} className="w-16 h-20 rounded-xl object-cover mb-3 shadow-md border-2 border-white group-hover:scale-105 transition-transform" />
-                  <p className="font-black text-slate-900 text-xs">{c.name}</p>
-                  <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase truncate w-full px-2">{c.school}</p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-slate-400 italic text-sm font-bold">No children registered yet.</p>
-        )}
-      </section>
 
-      {/* Booking Modal */}
+      {/* FIXED BOOKING MODAL WITH DROPDOWNS */}
       {isBookingModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md">
-           <div className="bg-white w-full max-w-xl rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-              <div className="bg-slate-900 p-10 text-white flex justify-between items-center">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md overflow-hidden">
+           <div className="bg-white w-full max-w-xl rounded-[3.5rem] shadow-2xl flex flex-col max-h-[95vh] animate-in zoom-in-95 duration-300">
+              <div className="bg-slate-900 p-8 text-white flex justify-between items-center flex-shrink-0">
                  <div>
-                    <h2 className="text-3xl font-black tracking-tight">New Booking</h2>
-                    <p className="text-slate-400 font-medium uppercase text-[10px] tracking-widest mt-1">Guardian Mobility Service</p>
+                    <h2 className="text-2xl font-black tracking-tight">New Booking</h2>
+                    <p className="text-slate-400 font-bold uppercase text-[9px] tracking-widest mt-1">Acik Network Protocol</p>
                  </div>
-                 <button onClick={() => setIsBookingModalOpen(false)} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors">
-                    <X size={24} />
-                 </button>
+                 <button onClick={() => setIsBookingModalOpen(false)} className="bg-white/10 p-2 rounded-full hover:bg-white/20 transition-colors"><X size={24} /></button>
               </div>
 
-              <div className="p-10 space-y-8">
+              <div className="p-8 space-y-8 overflow-y-auto no-scrollbar flex-grow">
                 {bookingStep === 1 ? (
                   <div className="space-y-8 animate-in slide-in-from-right-4">
                     <div>
-                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Select Passenger</h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 ml-1">Select Passenger</h3>
+                      <div className="grid grid-cols-2 gap-4">
                         {myChildren.map(child => (
-                          <button 
-                            key={child.id}
-                            onClick={() => setNewBooking({...newBooking, childId: child.id})}
-                            className={`p-4 rounded-[2rem] border-2 transition-all text-center flex flex-col items-center group ${newBooking.childId === child.id ? 'border-indigo-600 bg-indigo-50/50' : 'border-slate-50 bg-slate-50 hover:border-slate-200'}`}
-                          >
-                            <img src={child.photo} className="w-12 h-16 rounded-xl object-cover mb-2 border-2 border-white shadow-sm group-hover:scale-105 transition-transform" />
+                          <button key={child.id} onClick={() => setNewBooking({...newBooking, childId: child.id})} className={`p-5 rounded-[2.5rem] border-4 transition-all text-center flex flex-col items-center group ${newBooking.childId === child.id ? 'border-indigo-600 bg-indigo-50/50' : 'border-slate-50 bg-slate-50 hover:border-slate-200'}`}>
+                            <div className="w-16 h-20 rounded-2xl bg-slate-200 overflow-hidden mb-3 shadow-md border-2 border-white group-hover:scale-105 transition-transform">
+                               <img src={child.photo} className="w-full h-full object-cover" onError={(e) => { (e.target as any).src = `https://ui-avatars.com/api/?name=${child.name}&background=6366f1&color=fff&size=128` }} />
+                            </div>
                             <p className="font-black text-xs text-slate-900 truncate w-full">{child.name}</p>
                           </button>
                         ))}
@@ -412,73 +326,93 @@ const ParentView: React.FC<ParentViewProps> = ({ user, trips, childrenList, setT
                     </div>
 
                     <div className="space-y-4">
-                       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Service Frequency</h3>
-                       <div className="grid grid-cols-2 gap-3">
-                          <button 
-                            onClick={() => setNewBooking({...newBooking, type: 'ADHOC'})}
-                            className={`p-6 rounded-[2rem] border-2 text-left transition-all ${newBooking.type === 'ADHOC' ? 'border-indigo-600 bg-indigo-50/50' : 'border-slate-50 bg-slate-50 hover:border-slate-200'}`}
-                          >
-                             <Calendar className={`mb-3 ${newBooking.type === 'ADHOC' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Service Frequency</h3>
+                       <div className="grid grid-cols-2 gap-4">
+                          <button onClick={() => setNewBooking({...newBooking, type: 'ADHOC'})} className={`p-8 rounded-[2.5rem] border-4 text-left transition-all ${newBooking.type === 'ADHOC' ? 'border-indigo-600 bg-indigo-50/50' : 'border-slate-50 bg-slate-50 hover:border-slate-200'}`}>
+                             <Calendar className={`mb-4 ${newBooking.type === 'ADHOC' ? 'text-indigo-600' : 'text-slate-400'}`} size={28} />
                              <p className="font-black text-slate-900">One-off</p>
                              <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">Single Mission</p>
                           </button>
-                          <button 
-                            onClick={() => setNewBooking({...newBooking, type: 'DAILY'})}
-                            className={`p-6 rounded-[2rem] border-2 text-left transition-all ${newBooking.type === 'DAILY' ? 'border-indigo-600 bg-indigo-50/50' : 'border-slate-50 bg-slate-50 hover:border-slate-200'}`}
-                          >
-                             <Clock className={`mb-3 ${newBooking.type === 'DAILY' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                          <button onClick={() => setNewBooking({...newBooking, type: 'DAILY'})} className={`p-8 rounded-[2.5rem] border-4 text-left transition-all ${newBooking.type === 'DAILY' ? 'border-indigo-600 bg-indigo-50/50' : 'border-slate-50 bg-slate-50 hover:border-slate-200'}`}>
+                             <Clock className={`mb-4 ${newBooking.type === 'DAILY' ? 'text-indigo-600' : 'text-slate-400'}`} size={28} />
                              <p className="font-black text-slate-900">Recurring</p>
                              <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">Daily Routine</p>
                           </button>
                        </div>
                     </div>
-
-                    <button 
-                      onClick={() => setBookingStep(2)}
-                      className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg shadow-xl hover:bg-indigo-600 transition-all flex items-center justify-center gap-3"
-                    >
-                      Continue <ArrowRight size={20} />
-                    </button>
                   </div>
                 ) : (
-                  <div className="space-y-8 animate-in slide-in-from-right-4">
-                    <div className="bg-slate-50 p-6 rounded-[2.5rem] space-y-4">
-                       <div className="flex items-center gap-3">
-                          <MapPin size={20} className="text-indigo-600" />
-                          <div>
-                             <p className="text-[10px] font-black text-slate-400 uppercase">Pickup</p>
-                             <p className="text-sm font-black text-slate-900">{user.homeAddress || 'Your Registered Home'}</p>
-                          </div>
-                       </div>
-                       <div className="h-4 w-px bg-slate-200 ml-2" />
-                       <div className="flex items-center gap-3">
-                          <Navigation size={20} className="text-emerald-600" />
-                          <div>
-                             <p className="text-[10px] font-black text-slate-400 uppercase">Destination</p>
-                             <p className="text-sm font-black text-slate-900">{myChildren.find(c => c.id === newBooking.childId)?.school}</p>
-                          </div>
+                  <div className="space-y-8 animate-in slide-in-from-right-4 pb-4">
+                    {/* Pickup Selector */}
+                    <div className="space-y-3">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Pickup Location</label>
+                       <div className="relative group">
+                          <MapPin size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-indigo-500" />
+                          <select 
+                            value={newBooking.pickup}
+                            onChange={(e) => setNewBooking({...newBooking, pickup: e.target.value})}
+                            className="w-full pl-16 pr-10 py-5 bg-slate-50 border-4 border-slate-50 rounded-[2rem] font-black text-sm appearance-none outline-none focus:border-indigo-600 transition-all cursor-pointer"
+                          >
+                             <option value={user.homeAddress || "Home"}>Home: {user.homeAddress || "Bangsar"}</option>
+                             <option value="Current GPS Location">Use Current Location</option>
+                             <option value="Other / Custom">Specify Custom Location...</option>
+                          </select>
+                          <ChevronDown size={20} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                        </div>
                     </div>
 
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Preferred Pickup Time</label>
-                       <input 
-                         type="time" 
-                         value={newBooking.time}
-                         onChange={e => setNewBooking({...newBooking, time: e.target.value})}
-                         className="w-full px-8 py-5 bg-slate-50 border-2 border-slate-50 rounded-2xl font-black text-2xl outline-none focus:border-indigo-600 transition-all text-center"
-                       />
+                    {/* Destination Hub Dropdown */}
+                    <div className="space-y-3">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Destination Hub</label>
+                       <div className="relative group">
+                          <Navigation size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-500" />
+                          <select 
+                            value={newBooking.destination}
+                            onChange={(e) => setNewBooking({...newBooking, destination: e.target.value})}
+                            className="w-full pl-16 pr-10 py-5 bg-slate-50 border-4 border-slate-50 rounded-[2rem] font-black text-sm appearance-none outline-none focus:border-indigo-600 transition-all cursor-pointer"
+                          >
+                             <option value="">Select School / Activity Center</option>
+                             {SCHOOLS_LIST.map(school => (
+                               <option key={school} value={school}>{school}</option>
+                             ))}
+                          </select>
+                          <ChevronDown size={20} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                       </div>
                     </div>
 
-                    <div className="flex gap-3">
-                       <button onClick={() => setBookingStep(1)} className="flex-1 py-5 rounded-2xl font-black text-sm uppercase text-slate-400 hover:bg-slate-50 transition-colors">Go Back</button>
-                       <button 
-                         onClick={handleCreateBooking}
-                         className="flex-[2] bg-indigo-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl hover:bg-indigo-700 transition-all"
-                       >
-                         Initiate Match
-                       </button>
+                    {/* Time Picker */}
+                    <div className="space-y-3">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Departure Time</label>
+                       <div className="relative">
+                          <Clock size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <input 
+                            type="time" 
+                            value={newBooking.time} 
+                            onChange={e => setNewBooking({...newBooking, time: e.target.value})} 
+                            className="w-full pl-16 pr-6 py-5 bg-slate-50 border-4 border-slate-50 rounded-[2rem] font-black text-2xl outline-none focus:border-indigo-600 transition-all text-center" 
+                          />
+                       </div>
                     </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-8 bg-white border-t border-slate-50 flex-shrink-0">
+                {bookingStep === 1 ? (
+                  <button onClick={() => setBookingStep(2)} className="w-full bg-slate-900 text-white py-6 rounded-3xl font-black text-xl shadow-2xl hover:bg-indigo-600 transition-all flex items-center justify-center gap-4">
+                    Continue <ArrowRight size={24} />
+                  </button>
+                ) : (
+                  <div className="flex gap-4">
+                    <button onClick={() => setBookingStep(1)} className="flex-1 py-6 rounded-3xl font-black text-sm uppercase text-slate-400 hover:bg-slate-50 transition-all">Back</button>
+                    <button 
+                      onClick={handleCreateBooking} 
+                      disabled={!newBooking.destination}
+                      className="flex-[2] bg-indigo-600 text-white py-6 rounded-3xl font-black text-xl shadow-2xl hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:hover:bg-indigo-600"
+                    >
+                      Initiate Matching
+                    </button>
                   </div>
                 )}
               </div>
