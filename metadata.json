@@ -1,0 +1,7 @@
+{
+  "name": "Acik Transporter - Guardian Mobility",
+  "description": "Safe child transportation with real-time Google Maps linkup, passport photo identification, and school zone monitoring for Bangsar and Damansara Heights.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
